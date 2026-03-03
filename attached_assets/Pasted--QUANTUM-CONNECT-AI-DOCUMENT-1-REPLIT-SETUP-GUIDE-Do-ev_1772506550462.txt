@@ -1,0 +1,954 @@
+# QUANTUM CONNECT AI — DOCUMENT 1: REPLIT SETUP GUIDE
+
+# Do everything in this document FIRST, before opening Cursor.
+
+# This creates the skeleton. Cursor builds the muscles.
+
+# ALIGNED with Doc 2 Final: user hierarchy, per-rep model, admin panel, VPS architecture.
+
+-----
+
+## WHAT REPLIT IS RESPONSIBLE FOR
+
+Replit sets up the foundation that Cursor will build on top of:
+
+1. Next.js 14+ project with App Router
+1. Monorepo folder structure (not a flat project)
+1. Core dependencies installed
+1. PostgreSQL database created with all 18 tables + indexes
+1. Database client configured (standard pg, no vendor lock-in)
+1. .env file with DATABASE_URL connected + placeholder keys
+1. Tailwind CSS initialized with QC brand tokens
+1. A single test API route that confirms database connectivity
+1. A bare homepage that loads (proves the app runs)
+
+**What Replit does NOT do:** No pages, no UI, no business logic, no Stripe, no AI, no posting engine, no brand styling beyond the Tailwind config. That is all Cursor.
+
+-----
+
+## STEP 1: CREATE THE PROJECT
+
+Create a new **Next.js** project on Replit. Use Next.js 14+ with the App Router (not Pages Router).
+
+When Replit scaffolds it, it will create a flat project. You need to restructure it into a monorepo layout immediately.
+
+-----
+
+## STEP 2: SET UP MONOREPO FOLDER STRUCTURE
+
+Restructure the project to this layout. Create all folders even if they are empty. Cursor needs this structure to exist from the start.
+
+```
+quantum-connect/
+├── apps/
+│   ├── dashboard/                    # The Next.js app lives HERE
+│   │   ├── app/
+│   │   │   ├── (auth)/
+│   │   │   │   ├── login/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── signup/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── invite/
+│   │   │   │       └── [token]/
+│   │   │   │           └── page.tsx  # Rep accepts invite here
+│   │   │   ├── (dashboard)/
+│   │   │   │   ├── layout.tsx
+│   │   │   │   ├── page.tsx          # Dashboard overview
+│   │   │   │   ├── inventory/         # All vehicles (owner: all, rep: assigned)
+│   │   │   │   │   ├── page.tsx
+│   │   │   │   │   └── [id]/
+│   │   │   │   │       └── page.tsx  # Single vehicle detail
+│   │   │   │   ├── posting/          # Posting log (owner: all reps, rep: own)
+│   │   │   │   │   ├── page.tsx
+│   │   │   │   │   ├── schedule/     # Per-rep posting schedules
+│   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   └── groups/       # Buy/Sell group cross-posting
+│   │   │   │   │       └── page.tsx
+│   │   │   │   ├── photos/           # Photo processing (or upgrade card)
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── leads/            # Leads (owner: all reps, rep: own)
+│   │   │   │   │   ├── page.tsx
+│   │   │   │   │   └── [id]/
+│   │   │   │   │       └── page.tsx  # Conversation thread
+│   │   │   │   ├── team/             # Dealership owner: invite, manage, remove reps
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── billing/
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── settings/
+│   │   │   │       └── page.tsx
+│   │   │   ├── (admin)/              # QC INTERNAL ADMIN PANEL (superadmin only)
+│   │   │   │   ├── admin/
+│   │   │   │   │   ├── layout.tsx    # Admin layout (separate from dealer)
+│   │   │   │   │   ├── page.tsx      # Admin overview: totals, alerts, activity
+│   │   │   │   │   ├── accounts/     # All dealerships + individuals
+│   │   │   │   │   │   ├── page.tsx
+│   │   │   │   │   │   └── [id]/
+│   │   │   │   │   │       └── page.tsx  # Account deep dive
+│   │   │   │   │   ├── reps/         # All reps across ALL accounts
+│   │   │   │   │   │   ├── page.tsx
+│   │   │   │   │   │   └── [id]/
+│   │   │   │   │   │       └── page.tsx  # Rep deep dive: profile, proxy, actions
+│   │   │   │   │   ├── posting/      # Global posting queue + controls
+│   │   │   │   │   │   ├── page.tsx
+│   │   │   │   │   │   ├── selectors/
+│   │   │   │   │   │   │   └── page.tsx  # JSON editor, success rates, test
+│   │   │   │   │   │   └── schedule/
+│   │   │   │   │   │       └── page.tsx  # Master/per-account/per-rep pause
+│   │   │   │   │   ├── proxies/      # Proxy pool management
+│   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   ├── photos/       # Processing queue, free/paid toggle
+│   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   ├── leads/        # All leads across all accounts
+│   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   ├── health/       # VPS, AdsPower, worker, Redis status
+│   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   ├── alerts/       # Checkpoints, bans, failures, payments
+│   │   │   │   │   │   └── page.tsx
+│   │   │   │   │   └── settings/     # System config: AdsPower, proxy creds, defaults
+│   │   │   │   │       └── page.tsx
+│   │   │   ├── api/
+│   │   │   │   ├── health/
+│   │   │   │   │   └── route.ts      # DB connectivity test (we build this)
+│   │   │   │   ├── posting/          # VPS worker + extension call these
+│   │   │   │   │   ├── next/
+│   │   │   │   │   │   └── route.ts  # GET: next vehicle for a rep to post
+│   │   │   │   │   ├── log/
+│   │   │   │   │   │   └── route.ts  # POST: report posting result + screenshot
+│   │   │   │   │   └── config/
+│   │   │   │   │       └── route.ts  # GET: current selector config
+│   │   │   │   ├── webhooks/
+│   │   │   │   │   ├── facebook/
+│   │   │   │   │   │   └── route.ts  # Messenger webhook for chatbot
+│   │   │   │   │   ├── stripe/
+│   │   │   │   │   │   └── route.ts  # Stripe events -> feature flags
+│   │   │   │   │   └── twilio/
+│   │   │   │   │       └── route.ts  # SMS webhook
+│   │   │   │   ├── admin/
+│   │   │   │   │   └── route.ts      # Admin-only endpoints (superadmin)
+│   │   │   │   └── billing/
+│   │   │   │       └── route.ts      # Billing/subscription management
+│   │   │   ├── layout.tsx            # Root layout
+│   │   │   ├── page.tsx              # Landing/redirect
+│   │   │   └── globals.css           # Tailwind + QC brand tokens
+│   │   ├── components/
+│   │   │   └── ui/                   # Empty, shadcn adds here later
+│   │   ├── lib/
+│   │   │   ├── db.ts                 # Database client (we build this)
+│   │   │   └── utils.ts
+│   │   ├── tailwind.config.ts        # With QC brand tokens (we build this)
+│   │   ├── next.config.js
+│   │   ├── tsconfig.json
+│   │   └── package.json
+│   │
+│   └── workers/                      # Cursor builds this entirely
+│       ├── src/
+│       │   └── index.ts              # Placeholder: console.log('Worker ready')
+│       ├── package.json
+│       └── tsconfig.json
+│
+├── packages/
+│   └── shared/
+│       ├── types/
+│       ├── constants.ts
+│       └── package.json
+│
+├── migrations/
+│   └── 001_full_schema.sql           # Complete SQL schema (we build this)
+│
+├── .env
+├── .env.example
+└── package.json                      # Root package.json
+```
+
+### Placeholder Page Content
+
+Every placeholder `page.tsx` should contain the minimum:
+
+```tsx
+export default function PageName() {
+  return <div>Page Name - Coming Soon</div>;
+}
+```
+
+Replace “Page Name” with the actual page name so you can verify routing works.
+
+-----
+
+## STEP 3: INSTALL DEPENDENCIES
+
+In the dashboard app (`apps/dashboard/`), install:
+
+```
+# Core
+next react react-dom typescript @types/react @types/node
+
+# Styling
+tailwindcss postcss autoprefixer
+@tailwindcss/typography
+
+# UI (initialize shadcn, don't add components yet, Cursor will)
+npx shadcn@latest init
+
+# Database (standard PostgreSQL client, NOT Supabase)
+pg @types/pg
+
+# Auth (install now, configure in Cursor)
+next-auth @auth/core
+
+# Utilities
+clsx tailwind-merge lucide-react
+```
+
+In the workers app (`apps/workers/`), install:
+
+```
+typescript @types/node pg @types/pg
+```
+
+In the root, install:
+
+```
+turbo
+```
+
+**DO NOT install:** Supabase client libraries, Replit-specific database packages, or any vendor-specific database SDKs. Use the standard `pg` package only.
+
+-----
+
+## STEP 4: SET UP REPLIT POSTGRESQL DATABASE
+
+1. In your Replit project, enable the PostgreSQL database add-on
+1. Replit will provide a `DATABASE_URL` connection string
+1. Add it to your `.env` file
+
+-----
+
+## STEP 5: CREATE THE DATABASE CLIENT
+
+Create `apps/dashboard/lib/db.ts`:
+
+```typescript
+import { Pool } from 'pg';
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+});
+
+export default pool;
+
+// Usage in API routes:
+// import db from '@/lib/db';
+// const result = await db.query('SELECT * FROM dealers WHERE id = $1', [id]);
+```
+
+This client works with Replit PostgreSQL now AND any other PostgreSQL provider later. The only thing that changes is the `DATABASE_URL` environment variable.
+
+-----
+
+## STEP 6: RUN THE COMPLETE DATABASE MIGRATION
+
+Create `migrations/001_full_schema.sql` with the entire schema below. Then run it against your Replit PostgreSQL database.
+
+```sql
+-- ============================================
+-- QUANTUM CONNECT AI - COMPLETE DATABASE SCHEMA
+-- 18 tables + indexes
+-- Aligned with Doc 2 Final: per-rep model, admin panel, invitations, proxies, selectors
+-- Run this ONCE on initial setup
+-- ============================================
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ============================================
+-- 1. DEALERS (billing entity / tenant)
+-- Serves as the "account" for both dealerships and individual salespeople.
+-- ============================================
+CREATE TABLE dealers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  -- Account type: 'dealership' or 'individual'
+  account_type TEXT NOT NULL DEFAULT 'dealership',
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT,
+  address TEXT,
+  city TEXT,
+  state TEXT,
+  zip TEXT,
+  timezone TEXT NOT NULL DEFAULT 'America/New_York',
+  logo_url TEXT,
+  website_url TEXT,
+  dms_provider TEXT,
+  dms_feed_url TEXT,
+  -- Stripe billing
+  stripe_customer_id TEXT,
+  stripe_subscription_id TEXT,
+  stripe_subscription_status TEXT DEFAULT 'none',
+  trial_ends_at TIMESTAMPTZ,
+  -- Feature flags (SET ONLY BY STRIPE WEBHOOKS)
+  feature_core_active BOOLEAN DEFAULT false,
+  feature_custom_backgrounds BOOLEAN DEFAULT false,
+  feature_visual_merchandising BOOLEAN DEFAULT false,
+  feature_sales_dashboard BOOLEAN DEFAULT false,
+  feature_sales_dashboard_setup_paid BOOLEAN DEFAULT false,
+  -- Photo processing settings
+  photo_background_mode TEXT DEFAULT 'replace',
+  photo_background_template TEXT DEFAULT 'studio-white',
+  photo_plate_blur BOOLEAN DEFAULT true,
+  -- GHL config
+  ghl_location_id TEXT,
+  ghl_api_key_encrypted TEXT,
+  ghl_webhook_url TEXT,
+  ghl_pipeline_id TEXT,
+  ghl_calendar_id TEXT,
+  -- Limits (defaults, can be overridden per rep)
+  max_daily_posts INTEGER DEFAULT 10,
+  max_daily_group_posts INTEGER DEFAULT 3,
+  -- Metadata
+  subscription_plan TEXT DEFAULT 'core',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- 2. USERS (every person who can log in)
+-- Roles: 'owner', 'admin', 'rep', 'superadmin'
+-- owner = created the account, manages billing
+-- admin = same as owner minus delete/transfer
+-- rep = salesperson, sees only their own data
+-- superadmin = QC internal team (admin panel access)
+-- ============================================
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dealer_id UUID REFERENCES dealers(id) ON DELETE CASCADE,
+  email TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  password_hash TEXT,
+  role TEXT NOT NULL DEFAULT 'owner',
+  avatar_url TEXT,
+  is_active BOOLEAN DEFAULT true,
+  last_login_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- 3. INVITATIONS (rep invite tokens)
+-- ============================================
+CREATE TABLE invitations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dealer_id UUID REFERENCES dealers(id) ON DELETE CASCADE,
+  invited_by UUID REFERENCES users(id),
+  email TEXT NOT NULL,
+  name TEXT,
+  token TEXT UNIQUE NOT NULL,
+  role TEXT DEFAULT 'rep',
+  status TEXT DEFAULT 'pending',  -- pending, accepted, expired, revoked
+  expires_at TIMESTAMPTZ NOT NULL,
+  accepted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- 4. PROXIES (managed by admin panel)
+-- ============================================
+CREATE TABLE proxies (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  provider TEXT NOT NULL,           -- 'brightdata', 'decodo', etc.
+  host TEXT NOT NULL,
+  port INTEGER NOT NULL,
+  username TEXT,
+  password_encrypted TEXT,
+  protocol TEXT DEFAULT 'http',     -- http, socks5
+  geo_country TEXT,
+  geo_state TEXT,
+  geo_city TEXT,
+  assigned_rep_id UUID,             -- FK added after sales_reps created
+  status TEXT DEFAULT 'available',  -- available, assigned, failed, retired
+  last_tested_at TIMESTAMPTZ,
+  last_latency_ms INTEGER,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- 5. SALES REPS (each rep = one Facebook profile = one browser profile)
+-- This is the core operational entity for posting.
+-- ============================================
+CREATE TABLE sales_reps (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dealer_id UUID REFERENCES dealers(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id),
+  name TEXT NOT NULL,
+  email TEXT,
+  phone TEXT,
+  -- Facebook credentials (per rep)
+  facebook_email TEXT,
+  facebook_password_encrypted TEXT,
+  facebook_2fa_secret TEXT,
+  -- AdsPower browser profile (per rep)
+  adspower_profile_id TEXT,
+  -- Proxy assignment
+  proxy_id UUID REFERENCES proxies(id),
+  -- Operational status
+  status TEXT DEFAULT 'pending',    -- pending, warming, active, paused, flagged, banned
+  health_score INTEGER DEFAULT 100,
+  ramp_day INTEGER DEFAULT 0,       -- 0-14, tracks 14-day ramp-up progress
+  -- Daily posting tracking
+  daily_post_limit INTEGER DEFAULT 10,
+  posts_today INTEGER DEFAULT 0,
+  daily_post_reset_at TIMESTAMPTZ,
+  last_post_at TIMESTAMPTZ,
+  last_warmup_at TIMESTAMPTZ,
+  last_health_check_at TIMESTAMPTZ,
+  -- Stats
+  total_posts INTEGER DEFAULT 0,
+  total_leads INTEGER DEFAULT 0,
+  total_appointments INTEGER DEFAULT 0,
+  total_flags INTEGER DEFAULT 0,
+  -- Stripe (for Visual Merchandising per-seat billing)
+  stripe_subscription_item_id TEXT,
+  is_active BOOLEAN DEFAULT true,
+  -- Vehicle assignment
+  assigned_vehicle_ids UUID[],
+  assignment_mode TEXT DEFAULT 'all', -- 'all', 'manual', 'round_robin'
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Add FK from proxies to sales_reps now that sales_reps exists
+ALTER TABLE proxies ADD CONSTRAINT fk_proxy_rep
+  FOREIGN KEY (assigned_rep_id) REFERENCES sales_reps(id) ON DELETE SET NULL;
+
+-- ============================================
+-- 6. SUBSCRIPTION ADD-ONS
+-- ============================================
+CREATE TABLE subscription_addons (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dealer_id UUID REFERENCES dealers(id) ON DELETE CASCADE,
+  addon_type TEXT NOT NULL,
+  stripe_subscription_item_id TEXT,
+  status TEXT DEFAULT 'active',
+  quantity INTEGER DEFAULT 1,
+  unit_price_cents INTEGER,
+  setup_fee_paid BOOLEAN DEFAULT false,
+  activated_at TIMESTAMPTZ DEFAULT NOW(),
+  canceled_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- 7. STRIPE EVENTS LOG (idempotency)
+-- ============================================
+CREATE TABLE stripe_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  stripe_event_id TEXT UNIQUE NOT NULL,
+  event_type TEXT NOT NULL,
+  dealer_id UUID REFERENCES dealers(id),
+  payload JSONB NOT NULL,
+  processed BOOLEAN DEFAULT false,
+  processed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- 8. FACEBOOK GROUPS (Buy/Sell cross-posting)
+-- Now linked to sales_reps (each rep posts to groups from their own FB)
+-- ============================================
+CREATE TABLE facebook_groups (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dealer_id UUID REFERENCES dealers(id) ON DELETE CASCADE,
+  rep_id UUID REFERENCES sales_reps(id) ON DELETE CASCADE,
+  group_name TEXT NOT NULL,
+  group_url TEXT NOT NULL,
+  group_fb_id TEXT,
+  is_active BOOLEAN DEFAULT true,
+  posting_enabled BOOLEAN DEFAULT true,
+  max_posts_per_day INTEGER DEFAULT 3,
+  min_hours_between_posts INTEGER DEFAULT 4,
+  last_post_at TIMESTAMPTZ,
+  daily_post_count INTEGER DEFAULT 0,
+  daily_post_reset_at TIMESTAMPTZ,
+  status TEXT DEFAULT 'active',
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- 9. VEHICLES (inventory, shared across account)
+-- ============================================
+CREATE TABLE vehicles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dealer_id UUID REFERENCES dealers(id) ON DELETE CASCADE,
+  vin TEXT,
+  stock_number TEXT,
+  year INTEGER NOT NULL,
+  make TEXT NOT NULL,
+  model TEXT NOT NULL,
+  trim TEXT,
+  body_type TEXT,
+  exterior_color TEXT,
+  interior_color TEXT,
+  mileage INTEGER,
+  price DECIMAL(10,2),
+  msrp DECIMAL(10,2),
+  condition TEXT DEFAULT 'used',
+  transmission TEXT,
+  fuel_type TEXT,
+  drivetrain TEXT,
+  engine TEXT,
+  doors INTEGER,
+  features TEXT[],
+  description_raw TEXT,
+  photos_original TEXT[],
+  photos_processed TEXT[],
+  photo_processing_status TEXT DEFAULT 'pending',
+  photo_count INTEGER DEFAULT 0,
+  vdp_url TEXT,
+  status TEXT DEFAULT 'active',
+  price_changed_at TIMESTAMPTZ,
+  source TEXT DEFAULT 'manual',
+  last_synced_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- 10. POSTING SCHEDULES (per rep)
+-- ============================================
+CREATE TABLE posting_schedules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dealer_id UUID REFERENCES dealers(id) ON DELETE CASCADE,
+  rep_id UUID REFERENCES sales_reps(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  is_active BOOLEAN DEFAULT true,
+  posts_per_day INTEGER DEFAULT 8,
+  posting_window_start TIME DEFAULT '08:00',
+  posting_window_end TIME DEFAULT '21:00',
+  days_of_week INTEGER[] DEFAULT '{1,2,3,4,5,6,0}',
+  vehicle_selection_mode TEXT DEFAULT 'auto',
+  vehicle_filter JSONB,
+  skip_recently_posted_days INTEGER DEFAULT 3,
+  enable_group_crosspost BOOLEAN DEFAULT true,
+  group_crosspost_delay_minutes INTEGER DEFAULT 30,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- 11. POSTING LOG (per rep, tracks every post attempt)
+-- ============================================
+CREATE TABLE posting_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dealer_id UUID REFERENCES dealers(id) ON DELETE CASCADE,
+  rep_id UUID REFERENCES sales_reps(id),
+  vehicle_id UUID REFERENCES vehicles(id),
+  schedule_id UUID REFERENCES posting_schedules(id),
+  target_type TEXT NOT NULL DEFAULT 'marketplace',
+  target_group_id UUID REFERENCES facebook_groups(id),
+  status TEXT NOT NULL,
+  fb_listing_id TEXT,
+  fb_listing_url TEXT,
+  generated_title TEXT,
+  generated_description TEXT,
+  photos_uploaded INTEGER,
+  error_message TEXT,
+  error_screenshot_url TEXT,
+  duration_seconds INTEGER,
+  scheduled_for TIMESTAMPTZ,
+  posted_at TIMESTAMPTZ,
+  is_renewal BOOLEAN DEFAULT false,
+  original_posting_id UUID,
+  expires_at TIMESTAMPTZ,
+  renewal_count INTEGER DEFAULT 0,
+  last_renewed_at TIMESTAMPTZ,
+  last_price_at_post DECIMAL(10,2),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- 12. LEADS (routed to specific rep)
+-- ============================================
+CREATE TABLE leads (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dealer_id UUID REFERENCES dealers(id) ON DELETE CASCADE,
+  rep_id UUID REFERENCES sales_reps(id),
+  vehicle_id UUID REFERENCES vehicles(id),
+  posting_log_id UUID REFERENCES posting_log(id),
+  source TEXT NOT NULL,
+  fb_user_id TEXT,
+  fb_conversation_id TEXT,
+  name TEXT,
+  phone TEXT,
+  email TEXT,
+  status TEXT DEFAULT 'new',
+  qualification_score INTEGER,
+  qualification_data JSONB,
+  ai_handoff_reason TEXT,
+  appointment_requested_at TIMESTAMPTZ,
+  appointment_date TIMESTAMPTZ,
+  appointment_type TEXT,
+  ghl_contact_id TEXT,
+  ghl_opportunity_id TEXT,
+  ghl_synced_at TIMESTAMPTZ,
+  follow_up_count INTEGER DEFAULT 0,
+  last_message_at TIMESTAMPTZ,
+  last_follow_up_at TIMESTAMPTZ,
+  notes TEXT,
+  metadata JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- 13. MESSAGES
+-- ============================================
+CREATE TABLE messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  lead_id UUID REFERENCES leads(id) ON DELETE CASCADE,
+  direction TEXT NOT NULL,
+  channel TEXT NOT NULL,
+  sender TEXT NOT NULL,
+  content TEXT NOT NULL,
+  metadata JSONB,
+  sent_at TIMESTAMPTZ DEFAULT NOW(),
+  delivered_at TIMESTAMPTZ,
+  read_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- 14. GHL WEBHOOK LOG
+-- ============================================
+CREATE TABLE ghl_webhook_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dealer_id UUID REFERENCES dealers(id) ON DELETE CASCADE,
+  lead_id UUID REFERENCES leads(id),
+  rep_id UUID REFERENCES sales_reps(id),
+  event_type TEXT NOT NULL,
+  payload JSONB NOT NULL,
+  response_status INTEGER,
+  response_body TEXT,
+  success BOOLEAN DEFAULT false,
+  retry_count INTEGER DEFAULT 0,
+  max_retries INTEGER DEFAULT 3,
+  next_retry_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- 15. PHOTO PROCESSING LOG
+-- ============================================
+CREATE TABLE photo_processing_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dealer_id UUID REFERENCES dealers(id) ON DELETE CASCADE,
+  vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE,
+  original_url TEXT NOT NULL,
+  processed_url TEXT,
+  processing_type TEXT NOT NULL,
+  status TEXT DEFAULT 'pending',
+  background_template TEXT,
+  plate_detected BOOLEAN DEFAULT false,
+  plate_coordinates JSONB,
+  error_message TEXT,
+  processing_time_ms INTEGER,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- 16. ACCOUNT ACTIVITY LOG (per rep browser session)
+-- ============================================
+CREATE TABLE account_activity_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  rep_id UUID REFERENCES sales_reps(id) ON DELETE CASCADE,
+  activity_type TEXT NOT NULL,
+  details JSONB,
+  ip_address TEXT,
+  proxy_used TEXT,
+  screenshot_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- 17. SELECTOR CONFIGS (Facebook form selectors, managed by admin)
+-- ============================================
+CREATE TABLE selector_configs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,               -- e.g. 'marketplace_vehicle_form'
+  selectors JSONB NOT NULL,         -- The actual selector config JSON
+  is_active BOOLEAN DEFAULT true,
+  version INTEGER DEFAULT 1,
+  success_count INTEGER DEFAULT 0,
+  failure_count INTEGER DEFAULT 0,
+  last_tested_at TIMESTAMPTZ,
+  notes TEXT,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- 18. SYSTEM ALERTS (admin alert inbox)
+-- ============================================
+CREATE TABLE system_alerts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dealer_id UUID REFERENCES dealers(id),
+  rep_id UUID REFERENCES sales_reps(id),
+  alert_type TEXT NOT NULL,         -- checkpoint, ban, login_fail, post_fail, payment_fail, photo_fail
+  severity TEXT DEFAULT 'warning',  -- info, warning, critical
+  title TEXT NOT NULL,
+  details TEXT,
+  screenshot_url TEXT,
+  is_resolved BOOLEAN DEFAULT false,
+  resolved_by UUID REFERENCES users(id),
+  resolved_at TIMESTAMPTZ,
+  resolution_notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- INDEXES
+-- ============================================
+CREATE INDEX idx_users_dealer ON users(dealer_id, role, is_active);
+CREATE INDEX idx_invitations_token ON invitations(token) WHERE status = 'pending';
+CREATE INDEX idx_invitations_dealer ON invitations(dealer_id, status);
+CREATE INDEX idx_sales_reps_dealer ON sales_reps(dealer_id, is_active);
+CREATE INDEX idx_sales_reps_user ON sales_reps(user_id);
+CREATE INDEX idx_sales_reps_status ON sales_reps(status) WHERE is_active = true;
+CREATE INDEX idx_proxies_status ON proxies(status);
+CREATE INDEX idx_proxies_rep ON proxies(assigned_rep_id);
+CREATE INDEX idx_vehicles_dealer ON vehicles(dealer_id, status);
+CREATE INDEX idx_vehicles_photo_status ON vehicles(dealer_id, photo_processing_status);
+CREATE INDEX idx_posting_log_dealer ON posting_log(dealer_id, status, scheduled_for);
+CREATE INDEX idx_posting_log_rep ON posting_log(rep_id, posted_at DESC);
+CREATE INDEX idx_posting_log_vehicle ON posting_log(vehicle_id, posted_at DESC);
+CREATE INDEX idx_posting_log_renewal ON posting_log(dealer_id, expires_at, status) WHERE expires_at IS NOT NULL;
+CREATE INDEX idx_leads_dealer ON leads(dealer_id, status, created_at DESC);
+CREATE INDEX idx_leads_rep ON leads(rep_id, status, created_at DESC);
+CREATE INDEX idx_leads_ghl ON leads(dealer_id, ghl_synced_at) WHERE ghl_contact_id IS NULL;
+CREATE INDEX idx_messages_lead ON messages(lead_id, sent_at);
+CREATE INDEX idx_fb_groups_dealer ON facebook_groups(dealer_id, is_active);
+CREATE INDEX idx_fb_groups_rep ON facebook_groups(rep_id, is_active);
+CREATE INDEX idx_ghl_webhook_retry ON ghl_webhook_log(success, next_retry_at) WHERE success = false;
+CREATE INDEX idx_ghl_webhook_rep ON ghl_webhook_log(rep_id);
+CREATE INDEX idx_stripe_events_type ON stripe_events(event_type, processed);
+CREATE INDEX idx_subscription_addons_dealer ON subscription_addons(dealer_id, addon_type, status);
+CREATE INDEX idx_photo_log_vehicle ON photo_processing_log(vehicle_id, status);
+CREATE INDEX idx_activity_log_rep ON account_activity_log(rep_id, created_at DESC);
+CREATE INDEX idx_selector_configs_active ON selector_configs(is_active, name);
+CREATE INDEX idx_alerts_unresolved ON system_alerts(is_resolved, severity, created_at DESC) WHERE is_resolved = false;
+CREATE INDEX idx_alerts_dealer ON system_alerts(dealer_id, created_at DESC);
+CREATE INDEX idx_alerts_rep ON system_alerts(rep_id, created_at DESC);
+```
+
+**After running:** Verify all 18 tables exist and all indexes are created.
+
+-----
+
+## STEP 7: SET UP TAILWIND WITH QC BRAND TOKENS
+
+Configure `apps/dashboard/tailwind.config.ts`:
+
+```typescript
+import type { Config } from 'tailwindcss';
+
+const config: Config = {
+  darkMode: 'class',
+  content: [
+    './app/**/*.{ts,tsx}',
+    './components/**/*.{ts,tsx}',
+  ],
+  theme: {
+    extend: {
+      colors: {
+        qc: {
+          bg: {
+            primary: '#0A0A0B',
+            card: '#111113',
+            'card-hover': '#1A1A1D',
+            elevated: '#18181B',
+          },
+          border: {
+            DEFAULT: '#27272A',
+            active: '#3F3F46',
+          },
+          text: {
+            primary: '#FAFAFA',
+            secondary: '#A1A1AA',
+            muted: '#71717A',
+          },
+          accent: {
+            blue: '#3B82F6',
+            'blue-hover': '#2563EB',
+            purple: '#8B5CF6',
+          },
+          success: '#22C55E',
+          warning: '#EAB308',
+          danger: '#EF4444',
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+      },
+      borderRadius: {
+        'qc-sm': '6px',
+        'qc-md': '8px',
+        'qc-lg': '12px',
+        'qc-xl': '16px',
+      },
+      boxShadow: {
+        'qc-sm': '0 1px 2px rgba(0,0,0,0.3)',
+        'qc-md': '0 4px 6px rgba(0,0,0,0.4)',
+        'qc-lg': '0 10px 25px rgba(0,0,0,0.5)',
+      },
+    },
+  },
+  plugins: [],
+};
+
+export default config;
+```
+
+Add QC CSS custom properties to `globals.css`:
+
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --qc-accent-gradient: linear-gradient(135deg, #3B82F6, #8B5CF6);
+}
+
+body {
+  background-color: #0A0A0B;
+  color: #FAFAFA;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+```
+
+-----
+
+## STEP 8: CREATE THE DATABASE HEALTH CHECK API ROUTE
+
+Create `apps/dashboard/app/api/health/route.ts`:
+
+```typescript
+import { NextResponse } from 'next/server';
+import db from '@/lib/db';
+
+export async function GET() {
+  try {
+    const result = await db.query('SELECT COUNT(*) FROM dealers');
+    return NextResponse.json({
+      status: 'ok',
+      database: 'connected',
+      dealers_count: result.rows[0].count,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    return NextResponse.json({
+      status: 'error',
+      database: 'disconnected',
+      error: String(error),
+    }, { status: 500 });
+  }
+}
+```
+
+-----
+
+## STEP 9: SET UP .ENV FILE
+
+Create `.env` in the project root:
+
+```bash
+# Database (Replit PostgreSQL, swap this URL when migrating)
+DATABASE_URL=postgresql://...    # Replit provides this
+
+# Auth
+NEXTAUTH_URL=https://your-replit-url.replit.dev
+NEXTAUTH_SECRET=generate-a-random-32-char-string
+
+# AI
+ANTHROPIC_API_KEY=
+
+# Stripe
+STRIPE_SECRET_KEY=
+STRIPE_PUBLISHABLE_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_CORE_PRICE_ID=
+STRIPE_BACKGROUNDS_PRICE_ID=
+STRIPE_VISUAL_MERCH_PRICE_ID=
+STRIPE_DASHBOARD_PRICE_ID=
+STRIPE_DASHBOARD_SETUP_PRICE_ID=
+
+# Facebook
+FB_APP_ID=
+FB_APP_SECRET=
+FB_WEBHOOK_VERIFY_TOKEN=
+
+# Security
+ENCRYPTION_KEY=
+
+# Proxies
+PROXY_PROVIDER=
+PROXY_USERNAME=
+PROXY_PASSWORD=
+
+# AdsPower (on Hostinger VPS)
+ADSPOWER_API_URL=
+ADSPOWER_API_KEY=
+
+# SMS + Email
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+RESEND_API_KEY=
+
+# Photo Processing (leave empty unless free ONNX doesn't cut it)
+REMOVEBG_API_KEY=
+
+# Monitoring
+ALERT_EMAIL=jared@quantumconnectai.com
+VPS_HEALTH_ENDPOINT=
+VPS_API_KEY=
+```
+
+Also create `.env.example` with the same keys and no values.
+
+-----
+
+## STEP 10: VERIFY EVERYTHING WORKS
+
+Before pushing to Cursor, confirm:
+
+- [ ] `npm run dev` starts the Next.js app without errors
+- [ ] Visiting the root URL shows a page (even if placeholder)
+- [ ] Visiting `/api/health` returns `{"status":"ok","database":"connected","dealers_count":"0"}`
+- [ ] All 18 database tables exist (`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`)
+- [ ] All indexes exist
+- [ ] The monorepo folder structure is correct (apps/dashboard, apps/workers, packages/shared)
+- [ ] Admin route stubs exist at `/admin`, `/admin/accounts`, `/admin/reps`, etc.
+- [ ] Invite route stub exists at `/invite/[token]`
+- [ ] Tailwind compiles (test with `text-qc-accent-blue`)
+- [ ] `.env` has `DATABASE_URL` connected
+
+-----
+
+## WHAT HAPPENS NEXT
+
+Once all 10 steps are verified, this Replit project is ready for Cursor. Open it in Cursor with **Document 2 (Final)** loaded, and Opus 4.6 will build every feature on top of this foundation.
+
+What Cursor will have from day one:
+
+- A running Next.js app with the correct folder structure (including admin panel stubs)
+- A live PostgreSQL database with the complete 18-table schema (per-rep model, invitations, proxies, selectors, alerts)
+- Tailwind configured with the full QC brand system
+- A database client that works with any PostgreSQL provider
+- All page routes stubbed: dealer dashboard, admin panel, invite flow, API endpoints
+- Environment variables for every service the system needs
