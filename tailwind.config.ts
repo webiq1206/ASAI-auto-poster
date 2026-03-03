@@ -6,12 +6,15 @@ export default {
   theme: {
     extend: {
       borderRadius: {
-        lg: ".5625rem", /* 9px */
-        md: ".375rem", /* 6px */
-        sm: ".1875rem", /* 3px */
+        lg: ".5625rem",
+        md: ".375rem",
+        sm: ".1875rem",
+        "qc-sm": "6px",
+        "qc-md": "8px",
+        "qc-lg": "12px",
+        "qc-xl": "16px",
       },
       colors: {
-        // Flat / base colors (regular buttons)
         background: "hsl(var(--background) / <alpha-value>)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",
         border: "hsl(var(--border) / <alpha-value>)",
@@ -73,7 +76,7 @@ export default {
         "sidebar-accent": {
           DEFAULT: "hsl(var(--sidebar-accent) / <alpha-value>)",
           foreground: "hsl(var(--sidebar-accent-foreground) / <alpha-value>)",
-          border: "var(--sidebar-accent-border)"
+          border: "var(--sidebar-accent-border)",
         },
         status: {
           online: "rgb(34 197 94)",
@@ -81,11 +84,41 @@ export default {
           busy: "rgb(239 68 68)",
           offline: "rgb(156 163 175)",
         },
+        qc: {
+          bg: {
+            primary: "#0A0A0B",
+            card: "#111113",
+            "card-hover": "#1A1A1D",
+            elevated: "#18181B",
+          },
+          border: {
+            DEFAULT: "#27272A",
+            active: "#3F3F46",
+          },
+          text: {
+            primary: "#FAFAFA",
+            secondary: "#A1A1AA",
+            muted: "#71717A",
+          },
+          accent: {
+            blue: "#3B82F6",
+            "blue-hover": "#2563EB",
+            purple: "#8B5CF6",
+          },
+          success: "#22C55E",
+          warning: "#EAB308",
+          danger: "#EF4444",
+        },
       },
       fontFamily: {
         sans: ["var(--font-sans)"],
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
+      },
+      boxShadow: {
+        "qc-sm": "0 1px 2px rgba(0,0,0,0.3)",
+        "qc-md": "0 4px 6px rgba(0,0,0,0.4)",
+        "qc-lg": "0 10px 25px rgba(0,0,0,0.5)",
       },
       keyframes: {
         "accordion-down": {
