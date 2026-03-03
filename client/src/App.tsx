@@ -3,6 +3,8 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import { AdminLayout } from "@/components/layout/admin-layout";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Login from "@/pages/login";
@@ -35,42 +37,57 @@ import AdminHealth from "@/pages/admin-health";
 import AdminAlerts from "@/pages/admin-alerts";
 import AdminSettings from "@/pages/admin-settings";
 
+function DashboardPage({ component: Component }: { component: React.ComponentType }) {
+  return (
+    <DashboardLayout>
+      <Component />
+    </DashboardLayout>
+  );
+}
+
+function AdminPage({ component: Component }: { component: React.ComponentType }) {
+  return (
+    <AdminLayout>
+      <Component />
+    </AdminLayout>
+  );
+}
+
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-
       <Route path="/login" component={Login} />
       <Route path="/signup" component={Signup} />
       <Route path="/invite/:token" component={InviteToken} />
 
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/inventory" component={Inventory} />
-      <Route path="/inventory/:id" component={VehicleDetail} />
-      <Route path="/posting" component={Posting} />
-      <Route path="/posting/schedule" component={PostingSchedule} />
-      <Route path="/posting/groups" component={PostingGroups} />
-      <Route path="/photos" component={Photos} />
-      <Route path="/leads" component={Leads} />
-      <Route path="/leads/:id" component={LeadDetail} />
-      <Route path="/team" component={Team} />
-      <Route path="/billing" component={Billing} />
-      <Route path="/settings" component={Settings} />
+      <Route path="/dashboard">{() => <DashboardPage component={Dashboard} />}</Route>
+      <Route path="/inventory">{() => <DashboardPage component={Inventory} />}</Route>
+      <Route path="/inventory/:id">{() => <DashboardPage component={VehicleDetail} />}</Route>
+      <Route path="/posting">{() => <DashboardPage component={Posting} />}</Route>
+      <Route path="/posting/schedule">{() => <DashboardPage component={PostingSchedule} />}</Route>
+      <Route path="/posting/groups">{() => <DashboardPage component={PostingGroups} />}</Route>
+      <Route path="/photos">{() => <DashboardPage component={Photos} />}</Route>
+      <Route path="/leads">{() => <DashboardPage component={Leads} />}</Route>
+      <Route path="/leads/:id">{() => <DashboardPage component={LeadDetail} />}</Route>
+      <Route path="/team">{() => <DashboardPage component={Team} />}</Route>
+      <Route path="/billing">{() => <DashboardPage component={Billing} />}</Route>
+      <Route path="/settings">{() => <DashboardPage component={Settings} />}</Route>
 
-      <Route path="/admin" component={AdminOverview} />
-      <Route path="/admin/accounts" component={AdminAccounts} />
-      <Route path="/admin/accounts/:id" component={AdminAccountDetail} />
-      <Route path="/admin/reps" component={AdminReps} />
-      <Route path="/admin/reps/:id" component={AdminRepDetail} />
-      <Route path="/admin/posting" component={AdminPosting} />
-      <Route path="/admin/posting/selectors" component={AdminPostingSelectors} />
-      <Route path="/admin/posting/schedule" component={AdminPostingSchedule} />
-      <Route path="/admin/proxies" component={AdminProxies} />
-      <Route path="/admin/photos" component={AdminPhotos} />
-      <Route path="/admin/leads" component={AdminLeads} />
-      <Route path="/admin/health" component={AdminHealth} />
-      <Route path="/admin/alerts" component={AdminAlerts} />
-      <Route path="/admin/settings" component={AdminSettings} />
+      <Route path="/admin">{() => <AdminPage component={AdminOverview} />}</Route>
+      <Route path="/admin/accounts">{() => <AdminPage component={AdminAccounts} />}</Route>
+      <Route path="/admin/accounts/:id">{() => <AdminPage component={AdminAccountDetail} />}</Route>
+      <Route path="/admin/reps">{() => <AdminPage component={AdminReps} />}</Route>
+      <Route path="/admin/reps/:id">{() => <AdminPage component={AdminRepDetail} />}</Route>
+      <Route path="/admin/posting">{() => <AdminPage component={AdminPosting} />}</Route>
+      <Route path="/admin/posting/selectors">{() => <AdminPage component={AdminPostingSelectors} />}</Route>
+      <Route path="/admin/posting/schedule">{() => <AdminPage component={AdminPostingSchedule} />}</Route>
+      <Route path="/admin/proxies">{() => <AdminPage component={AdminProxies} />}</Route>
+      <Route path="/admin/photos">{() => <AdminPage component={AdminPhotos} />}</Route>
+      <Route path="/admin/leads">{() => <AdminPage component={AdminLeads} />}</Route>
+      <Route path="/admin/health">{() => <AdminPage component={AdminHealth} />}</Route>
+      <Route path="/admin/alerts">{() => <AdminPage component={AdminAlerts} />}</Route>
+      <Route path="/admin/settings">{() => <AdminPage component={AdminSettings} />}</Route>
 
       <Route component={NotFound} />
     </Switch>

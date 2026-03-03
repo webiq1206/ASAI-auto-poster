@@ -5,5 +5,22 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsc"
+  },
+  "dependencies": {
+    "@types/node-cron": "^3.0.11",
+    "axios": "^1.13.6",
+    "bullmq": "^5.70.1",
+    "drizzle-orm": "^0.45.1",
+    "ioredis": "^5.9.3",
+    "node-cron": "^4.2.1",
+    "pg": "^8.19.0",
+    "playwright": "^1.58.2",
+    "sharp": "^0.34.5",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.18.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }

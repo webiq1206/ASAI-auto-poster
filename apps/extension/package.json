@@ -1,0 +1,13 @@
+{
+  "name": "qc-extension",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "@types/chrome": "^0.0.300"
+  }
+}

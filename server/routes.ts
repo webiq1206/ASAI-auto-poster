@@ -2,11 +2,48 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { pool } from "./db";
+import authRoutes from "./routes/auth";
+import invitationRoutes from "./routes/invitations";
+import facebookRoutes from "./routes/facebook";
+import billingRoutes from "./routes/billing";
+import stripeWebhook from "./webhooks/stripe";
+import teamRoutes from "./routes/team";
+import vehicleRoutes from "./routes/vehicles";
+import postingRoutes from "./routes/posting";
+import adminRoutes from "./routes/admin";
+import leadsRoutes from "./routes/leads";
+import facebookWebhook from "./webhooks/facebook";
+import twilioWebhook from "./webhooks/twilio";
+import photosRoutes from "./routes/photos";
+import statsRoutes from "./routes/stats";
+import settingsRoutes from "./routes/settings";
+import vpsRoutes from "./routes/vps";
+import groupsRoutes from "./routes/groups";
+import schedulesRoutes from "./routes/schedules";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
+  app.use(authRoutes);
+  app.use(invitationRoutes);
+  app.use(facebookRoutes);
+  app.use(billingRoutes);
+  app.use(stripeWebhook);
+  app.use(teamRoutes);
+  app.use(vehicleRoutes);
+  app.use(postingRoutes);
+  app.use(adminRoutes);
+  app.use(leadsRoutes);
+  app.use(facebookWebhook);
+  app.use(twilioWebhook);
+  app.use(photosRoutes);
+  app.use(statsRoutes);
+  app.use(settingsRoutes);
+  app.use(vpsRoutes);
+  app.use(groupsRoutes);
+  app.use(schedulesRoutes);
 
   app.get("/api/health", async (_req, res) => {
     try {
@@ -24,38 +61,6 @@ export async function registerRoutes(
         error: String(error),
       });
     }
-  });
-
-  app.get("/api/posting/next", async (_req, res) => {
-    res.json({ status: "not_implemented", endpoint: "GET /api/posting/next" });
-  });
-
-  app.post("/api/posting/log", async (_req, res) => {
-    res.json({ status: "not_implemented", endpoint: "POST /api/posting/log" });
-  });
-
-  app.get("/api/posting/config", async (_req, res) => {
-    res.json({ status: "not_implemented", endpoint: "GET /api/posting/config" });
-  });
-
-  app.post("/api/webhooks/facebook", async (_req, res) => {
-    res.json({ status: "not_implemented", endpoint: "POST /api/webhooks/facebook" });
-  });
-
-  app.post("/api/webhooks/stripe", async (_req, res) => {
-    res.json({ status: "not_implemented", endpoint: "POST /api/webhooks/stripe" });
-  });
-
-  app.post("/api/webhooks/twilio", async (_req, res) => {
-    res.json({ status: "not_implemented", endpoint: "POST /api/webhooks/twilio" });
-  });
-
-  app.get("/api/admin", async (_req, res) => {
-    res.json({ status: "not_implemented", endpoint: "GET /api/admin" });
-  });
-
-  app.get("/api/billing", async (_req, res) => {
-    res.json({ status: "not_implemented", endpoint: "GET /api/billing" });
   });
 
   return httpServer;

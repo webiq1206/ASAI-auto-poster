@@ -50,6 +50,7 @@ export const dealers = pgTable("dealers", {
   maxDailyPosts: integer("max_daily_posts").default(10),
   maxDailyGroupPosts: integer("max_daily_group_posts").default(3),
   subscriptionPlan: text("subscription_plan").default("core"),
+  isPaused: boolean("is_paused").default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).default(sql`NOW()`),
   updatedAt: timestamp("updated_at", { withTimezone: true }).default(sql`NOW()`),
 });
